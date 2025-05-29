@@ -22,17 +22,10 @@ module.exports = {
   getAllCategories: async (req, res) => {
     try {
       const categories = await Category.findAll({
-        attributes: ['id', 'name', 'parent_id'],
-        include: [
-          {
-            model: Category,
-            as: 'Parent',
-            attributes: ['id', 'name'],
-            required: false, // Allow categories without a parent
-          },
-        ],
+        where: { parent_id: null }, // Only top-level categories
+        attributes: ['id', 'name'],
       });
-      return res.status(200).json(categories);
+      return res.status(200).json({ message: 'Lấy danh mục thành công', categories });
     } catch (error) {
       console.error('getAllCategories error:', error);
       return res.status(500).json({ message: 'Lỗi server', error: error.message });
@@ -44,6 +37,7 @@ module.exports = {
       const { id } = req.params;
       if (isNaN(id)) return res.status(400).json({ message: 'ID danh mục không hợp lệ' });
       const category = await Category.findByPk(id, {
+        attributes: ['id', 'name', 'parent_id'],
         include: [
           {
             model: Category,
@@ -93,10 +87,13 @@ module.exports = {
     try {
       const { id } = req.params;
       if (isNaN(id)) return res.status(400).json({ message: 'ID danh mục không hợp lệ' });
-      const products = await Product.count({ where: { category_id: id } });
-      if (products > 0) {
-        return res.status(400).json({ message: 'Không thể xóa danh mục đang chứa sản phẩm' });
+
+      // Check for child categories
+      const children = await Category.count({ where: { parent_id: id } });
+      if (children > 0) {
+        return res.status(400).json({ message: 'Không thể xóa danh mục có danh mục con' });
       }
+
       const deleted = await Category.destroy({ where: { id } });
       if (!deleted) return res.status(404).json({ message: 'Danh mục không tồn tại' });
       return res.status(200).json({ message: 'Đã xóa danh mục' });

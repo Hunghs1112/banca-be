@@ -49,7 +49,7 @@ Address.belongsTo(User, { foreignKey: 'userId', as: 'User' });
 
 // Self-referential association for Category
 Category.belongsTo(Category, { foreignKey: 'parent_id', as: 'Parent' });
-Category.hasMany(Category, { foreignKey: 'parent_id', as: 'SubCategories' });
+Category.hasMany(Category, { foreignKey: 'parent_id', as: 'Children' });
 
 // Export models
 module.exports = {

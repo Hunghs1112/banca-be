@@ -7,12 +7,12 @@ module.exports = {
     try {
       const { name, description, category_id, sku, price, stock } = req.body;
       const image = req.file ? `/uploads/${req.file.filename}` : null;
-
+  
       // Validate required fields
       if (!name) return res.status(400).json({ message: 'Tên sản phẩm là bắt buộc' });
       if (!description) return res.status(400).json({ message: 'Mô tả sản phẩm là bắt buộc' });
       if (!category_id) return res.status(400).json({ message: 'Danh mục sản phẩm là bắt buộc' });
-
+  
       // Validate optional variant fields
       if (sku || price || stock) {
         if (!sku || !price || !stock) {
@@ -28,34 +28,29 @@ module.exports = {
           return res.status(400).json({ message: 'Tồn kho phải là số không âm' });
         }
       }
-
+  
       // Verify category exists
       const category = await Category.findByPk(category_id, { transaction });
       if (!category) {
         await transaction.rollback();
         return res.status(400).json({ message: 'Danh mục không tồn tại' });
       }
-
+  
       // Create product
       const newProduct = await Product.create(
         { name, description, image, category_id },
         { transaction }
       );
-
+  
       // Create variant if provided
       let variant = null;
       if (sku && price && stock) {
-        const existingVariant = await ProductVariant.findOne({ where: { sku }, transaction });
-        if (existingVariant) {
-          await transaction.rollback();
-          return res.status(400).json({ message: 'SKU đã tồn tại' });
-        }
         variant = await ProductVariant.create(
           { product_id: newProduct.id, sku, price, stock },
           { transaction }
         );
       }
-
+  
       await transaction.commit();
       return res.status(201).json({ product: newProduct, variant });
     } catch (error) {

@@ -10,12 +10,11 @@ const ProductVariant = sequelize.define('ProductVariant', {
   product_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: { model: 'Products', key: 'id' },
   },
   sku: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
+    unique: false,
     validate: { len: [3, 50] },
   },
   price: {

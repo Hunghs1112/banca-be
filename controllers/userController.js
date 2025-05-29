@@ -61,61 +61,64 @@ module.exports = {
       return res.status(500).json({ error: error.message });
     }
   },
-  signup: async (req, res) => {
-    try {
-      const { username, email, password } = req.body;
+
+
   
-      // Kiểm tra nếu email đã tồn tại
-      const existingUser = await User.findOne({ where: { email } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email đã được sử dụng' });
+    signup: async (req, res) => {
+      try {
+        const { name, email, password } = req.body;
+  
+        // Kiểm tra nếu email đã tồn tại
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+          return res.status(400).json({ message: 'Email đã được sử dụng' });
+        }
+  
+        // Tạo user mới
+        const newUser = await User.create({
+          name,
+          email,
+          password, // Plain text as requested
+        });
+  
+        return res.status(201).json({
+          message: 'Đăng ký thành công',
+          user: {
+            id: newUser.id,
+            name: newUser.name, // Use name, not username
+            email: newUser.email,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
       }
+    },
   
-      // Tạo user mới mà không mã hóa mật khẩu
-      const newUser = await User.create({
-        username,
-        email,
-        password, // Lưu mật khẩu dạng plain text
-      });
+    login: async (req, res) => {
+      try {
+        const { email, password } = req.body;
   
-      return res.status(201).json({
-        message: 'Đăng ký thành công',
-        user: {
-          id: newUser.id,
-          username: newUser.name,
-          email: newUser.email,
-        },
-      });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  },
+        // Tìm user theo email
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+          return res.status(404).json({ message: 'Không tìm thấy người dùng với email này' });
+        }
   
-  login: async (req, res) => {
-    try {
-      const { email, password } = req.body;
+        // Kiểm tra mật khẩu
+        if (password !== user.password) {
+          return res.status(401).json({ message: 'Mật khẩu không chính xác' });
+        }
   
-      // Tìm user theo email
-      const user = await User.findOne({ where: { email } });
-      if (!user) {
-        return res.status(404).json({ message: 'Không tìm thấy người dùng với email này' });
+        return res.status(200).json({
+          message: 'Đăng nhập thành công',
+          user: {
+            id: user.id,
+            name: user.name, // Use name, not username
+            email: user.email,
+          },
+        });
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
       }
-  
-      // Kiểm tra mật khẩu mà không cần giải mã
-      if (password !== user.password) {
-        return res.status(401).json({ message: 'Mật khẩu không chính xác' });
-      }
-  
-      return res.status(200).json({
-        message: 'Đăng nhập thành công',
-        user: {
-          id: user.id,
-          username: user.name, // Thêm username vào phản hồi
-          email: user.email,
-        },
-      });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  },
-};
+    },
+  };
